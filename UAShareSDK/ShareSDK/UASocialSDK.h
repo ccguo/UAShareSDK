@@ -7,4 +7,6 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "UAShareSDKSingle.h"
+
+#import "UASocialSDKSingle.h"
+#import "UASocialConfig.h"

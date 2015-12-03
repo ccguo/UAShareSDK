@@ -7,6 +7,7 @@
 //
 
 #import "ViewController.h"
+#import "UASocialShareManager.h"
 
 @interface ViewController ()
 
@@ -16,12 +17,19 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    [UASocialShareManager getShareListWithType:2,3,5, nil];
+    
+    
     // Do any additional setup after loading the view, typically from a nib.
 }
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+- (IBAction)share:(id)sender {
+    
+    [[UASocialShareManager shareInstance] shareToInfo];
 }
 
 @end

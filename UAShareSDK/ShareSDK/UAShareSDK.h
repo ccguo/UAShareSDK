@@ -7,7 +7,4 @@
 //
 
 #import <Foundation/Foundation.h>
-
-@interface UAShareSDK : NSObject
-
-@end
+#import "UAShareSDKSingle.h"

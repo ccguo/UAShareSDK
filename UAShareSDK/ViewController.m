@@ -8,6 +8,7 @@
 
 #import "ViewController.h"
 #import "UASocialShareManager.h"
+#import "UASocialSDK.h"
 
 @interface ViewController ()
 
@@ -17,7 +18,6 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    [UASocialShareManager getShareListWithType:2,3,5, nil];
     
     
     // Do any additional setup after loading the view, typically from a nib.
@@ -28,8 +28,11 @@
     // Dispose of any resources that can be recreated.
 }
 - (IBAction)share:(id)sender {
-    
-    [[UASocialShareManager shareInstance] shareToInfo];
+    NSArray *list = [UASocialSDK getShareListWithType:1,2,3, nil];
+
+    [[UASocialShareManager shareInstance] shareWithModel:nil shareList:list completion:^(NSDictionary *shareInfo,BOOL result){
+        NSLog(@"saasas");
+    }];
 }
 
 @end

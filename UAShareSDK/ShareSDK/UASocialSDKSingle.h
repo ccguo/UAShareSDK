@@ -1,13 +1,13 @@
 //
-//  UAShareSDKSingle.h
-//  UAShareSDK
+//  UASocialSDKSingle.h
+//  UASocialSDKSingle
 //
 //  Created by guochaoyang on 15/12/3.
 //  Copyright © 2015年 guochaoyang. All rights reserved.
 //
 
-#ifndef UAShareSDKSingle_h
-#define UAShareSDKSingle_h
+#ifndef UASocialSDKSingle_h
+#define UASocialSDKSingle_h
 
 #define SYNTHESIZE_SINGLE_CLASS(classname)\
 static classname *shareInatance = nil;\
@@ -35,4 +35,4 @@ return shareInatance;\
 }\
 
 
-#endif /* UAShareSDKSingle_h */
+#endif /* UASocialSDKSingle_h */

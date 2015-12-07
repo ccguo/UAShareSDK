@@ -7,6 +7,22 @@
 //
 
 #import <Foundation/Foundation.h>
-
-#import "UASocialSDKSingle.h"
+#import "UASocialShareManager.h"
 #import "UASocialConfig.h"
+#import "UASocialSDKDefine.h"
+
+typedef void(^CompletionBlock) (NSDictionary *shareInfo,BOOL result);
+
+@interface UASocialSDK : NSObject
+
++ (void)registWithAppID:(NSString *)appID socialType:(UASocialChannelType)type;
+
++ (void)shareWithModel:(UASocialShareModel *)model shareList:(NSArray *)list completion:(CompletionBlock)block;
+
++ (NSArray *)getShareListWithType:(UASocialChannelType)firstObj, ... NS_REQUIRES_NIL_TERMINATION;
+
++ (void)setDebugModel:(BOOL)debug;
+
++ (BOOL)debugModel;
+
+@end

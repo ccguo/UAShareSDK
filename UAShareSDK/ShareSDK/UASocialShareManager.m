@@ -14,52 +14,137 @@
 {
     UASocialBoardView *_boardView;
 }
-
-//@property (nonatomic,strong)
-
+@property  (nonatomic,assign) BOOL showEnable;
+@property  (nonatomic,copy)   CompletionBlock completion;
+@property  (nonatomic,copy)   UASocialShareModel *model;
 @end
 
 @implementation UASocialShareManager
-SYNTHESIZE_SINGLE_CLASS(UASocialShareManager)
 
-+ (NSArray *)getShareListWithType:(UASocialChannelType)firstObj, ... NS_REQUIRES_NIL_TERMINATION
-{
-    va_list args;
-    va_start(args, firstObj);
-    for (NSInteger str = firstObj; str>0; str = va_arg(args,NSInteger)) {
-         NSLog(@"%ld",str);
-    }
-    va_end(args);
-    
-    return @[];
-}
+SYNTHESIZE_SINGLE_CLASS(UASocialShareManager)
 
 - (instancetype)init
 {
     self = [super init];
-    if (self) {
+    if (self)
+    {
         [self initUI];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(didReceiveSocialResultInfo:)
+                                                     name:UASocialShareResultNotificationName
+                                                   object:nil];
     }
     return self;
 }
 
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+}
+
 - (void)initUI
 {
-    _boardView = [[UASocialBoardView alloc] initWithFrame:CGRectMake(0, UA_SCREEN_HEIGHT + UA_BOARD_HEIGHT, UA_SCREEN_WIDTH, UA_BOARD_HEIGHT)];
+    __weak typeof (self) weakself = self;
+
+    _boardView = [[UASocialBoardView alloc] initWithFrame:CGRectMake(0,marginTopHiden, SCREEN_WIDTH, BOARD_HEIGHT)];
     _boardView.backgroundColor = [UIColor grayColor];
     [_boardView setTapBlock:^(NSInteger index){
-        [UIView animateWithDuration:1 animations:^{
-            _boardView.frame = CGRectMake(0, UA_SCREEN_HEIGHT + UA_BOARD_HEIGHT, UA_SCREEN_WIDTH, UA_BOARD_HEIGHT);
-        }];
+        [weakself didBoardViewItemClickedAtChannelType:index];
     }];
     [[UIApplication sharedApplication].keyWindow addSubview:_boardView];
 }
 
-- (void)shareToInfo
+- (void)showBoardView
 {
+    _showEnable = YES;
     [UIView animateWithDuration:1 animations:^{
-        _boardView.frame = CGRectMake(0, UA_SCREEN_HEIGHT - UA_BOARD_HEIGHT, UA_SCREEN_WIDTH, UA_BOARD_HEIGHT);
+        _boardView.frame = CGRectMake(0, marginTopShow, SCREEN_WIDTH , BOARD_HEIGHT);
     }];
 }
+
+- (void)hideBoardView
+{
+    _showEnable = NO;
+    [UIView animateWithDuration:1 animations:^{
+        _boardView.frame = CGRectMake(0, marginTopHiden, SCREEN_WIDTH, BOARD_HEIGHT);
+    }];
+}
+
+#pragma mark - public method
+- (void)registWithAppID:(NSString *)appID debugModel:(BOOL)debugModel socialType:(UASocialChannelType)type
+{
+    [UASocialManager registWithAppID:appID debugModel:debugModel socialType:type];
+}
+
+- (void)shareWithModel:(UASocialShareModel *)model shareList:(NSArray *)list completion:(void(^)(NSDictionary *shareInfo,BOOL result))block;
+{
+    self.model = model;
+    self.completion = block;
+    
+    [_boardView processData:list];
+    
+    if (!self.showEnable){
+        [self showBoardView];
+    }
+    else{
+        [self hideBoardView];
+    }
+}
+
+- (void)didBoardViewItemClickedAtChannelType:(NSInteger)channelType
+{
+    switch (channelType) {
+        case UASocialChannelWeiXin:
+            
+            break;
+        case UASocialChannelWeiXinTimeLine:
+            
+            break;
+        case UASocialChannelWeiBo:
+            
+            break;
+        case UASocialChannelQQ:
+            
+            break;
+        case UASocialChannelQzone:
+            
+            break;
+        case UASocialChannelCopy:
+            
+            break;
+        default:
+            break;
+    }
+}
+
+- (void)sendWBRequest:(WBMessageObject *)message
+{
+    [[UASocialManager shareInstance] sendWBRequest:message];
+}
+
+- (BOOL)sendWXRequest:(BaseReq *)message
+{
+    return [[UASocialManager shareInstance] sendWXRequest:message];
+}
+
+- (void)sendToQQRequest:(QQApiNewsObject*)message;
+{
+    return [[UASocialManager shareInstance] sendToQQRequest:message];
+}
+
+- (void)sendQQzoneRequest:(QQApiNewsObject*)message
+{
+    return [[UASocialManager shareInstance] sendQQzoneRequest:message];
+}
+
+#pragma mark - Observer Event
+- (void)didReceiveSocialResultInfo:(NSNotification *)noti
+{
+    
+}
+@end
+
+
+@implementation UASocialShareModel
 
 @end

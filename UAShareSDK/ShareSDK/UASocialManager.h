@@ -9,28 +9,13 @@
 #import <Foundation/Foundation.h>
 #import <TencentOpenAPI/TencentOAuth.h>
 #import <TencentOpenAPI/QQApiInterface.h>
-#import "UASocialConfig.h"
+#import "UASocialSDKDefine.h"
 #import "WeiboSDK.h"
 #import "WXApi.h"
 
-typedef NS_ENUM(NSInteger,UASocialChannelType)
-{
-    UASocialChannelWeiXin = 1,
-    UASocialChannelWeiXinTimeLine,
-    UASocialChannelWeiBo,
-    UASocialChannelQQ,
-    UASocialChannelQzone,
-    UASocialChannelCopy
-};
-
-typedef NS_ENUM(NSInteger,UASocialResaultType)
-{
-    UASocialResaultSucces = 0,
-    UASocialResaultCancel,
-    UASocialResaultFail
-};
-
 @interface UASocialManager : NSObject
+
++ (instancetype)shareInstance;
 
 + (void)registWithAppID:(NSString *)appID debugModel:(BOOL)debug socialType:(UASocialChannelType)type;
 
@@ -38,7 +23,7 @@ typedef NS_ENUM(NSInteger,UASocialResaultType)
 
 - (BOOL)sendWXRequest:(BaseReq *)message;
 
-- (void)sendtoQQRequest:(QQApiNewsObject*)message;
+- (void)sendToQQRequest:(QQApiNewsObject*)message;
 
 - (void)sendQQzoneRequest:(QQApiNewsObject*)message;
 

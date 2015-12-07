@@ -7,6 +7,8 @@
 //
 
 #import "UASocialManager.h"
+#import "UASocialConfig.h"
+#import "UASocialSDKSingle.h"
 
 @interface UASocialManager ()<WXApiDelegate,WeiboSDKDelegate>
 @property (nonatomic,strong) NSString *wbToken;
@@ -15,6 +17,8 @@
 @end
 
 @implementation UASocialManager
+
+SYNTHESIZE_SINGLE_CLASS(UASocialManager)
 
 + (void)registWithAppID:(NSString *)appID debugModel:(BOOL)debug socialType:(UASocialChannelType)type
 {
@@ -40,7 +44,7 @@
     authRequest.scope = @"all";
     
     WBSendMessageToWeiboRequest *request = [WBSendMessageToWeiboRequest requestWithMessage:message authInfo:authRequest access_token:self.wbToken];
-    request.userInfo = @{@"ShareMessageFrom": @"UASocialManager"};
+    request.userInfo = @{@"UAShareMessage": @"UASocialManager"};
     [WeiboSDK sendRequest:request];
 }
 
@@ -49,7 +53,7 @@
     return [WXApi sendReq:message];
 }
 
-- (void)sendtoQQRequest:(QQApiNewsObject*)message
+- (void)sendToQQRequest:(QQApiNewsObject*)message
 {
     SendMessageToQQReq* req = [SendMessageToQQReq reqWithContent:message];
     QQApiSendResultCode sent = [QQApiInterface sendReq:req];
@@ -65,36 +69,64 @@
 
 - (BOOL)handleOpenURL:(NSURL *)url
 {
-    NSString *urlScheme = [url scheme];
     __weak __typeof__(self) weakSelf = self;
+    NSString *urlScheme = [url scheme];
     
-    if ([urlScheme isEqualToString:UASOCIAL_WX_KEY]) {
+    if ([urlScheme isEqualToString:UASOCIAL_WX_KEY])
+    {
         return [WXApi handleOpenURL:url delegate:weakSelf];
     }
     
-    if ([urlScheme isEqualToString:UASOCIAL_WB_KEY]) {
+    if ([urlScheme isEqualToString:UASOCIAL_WB_KEY])
+    {
         return [WeiboSDK handleOpenURL:url delegate:weakSelf];
     }
     
-    if ([urlScheme isEqualToString:UASOCIAL_QQ_KEY]) {
+    if ([urlScheme isEqualToString:UASOCIAL_QQ_KEY])
+    {
         return [TencentOAuth HandleOpenURL:url];
     }
     
     return YES;
 }
 
+#pragma mark - private 方法
+
+- (void)notificationShareResultWithInfo:(NSDictionary *)info
+{
+    [[NSNotificationCenter defaultCenter] postNotificationName:UASocialShareResultNotificationName object:info];
+}
+
+- (NSMutableDictionary *)commongResultInfo
+{
+    NSMutableDictionary *dicInfo = [NSMutableDictionary dictionary];
+    [dicInfo setObject:[NSNumber numberWithBool:NO] forKey:UA_RESULT_RESULT];
+    [dicInfo setObject:@"success" forKey:UA_RESULT_TITLE];
+    [dicInfo setObject:[NSNumber numberWithBool:UASocialChannelWeiXin] forKey:UA_RESULT_TYPE];
+    return dicInfo;
+}
+
+#pragma mark - 回调处理方法
 - (void)handleSendResult:(QQApiSendResultCode)sendResult
 {
+    NSMutableDictionary *dicInfo = [self commongResultInfo];
+    
     switch (sendResult)
     {
         case 0:
         {
             //发送成功
+            [dicInfo setObject:[NSNumber numberWithInteger:UASocialResaultSucces] forKey:UA_RESULT_RESULT];
+            [dicInfo setObject:[NSNumber numberWithBool:UASocialChannelQQ] forKey:UA_RESULT_TYPE];
+            [self notificationShareResultWithInfo:dicInfo];
             break;
         }
         case -1:
         {
             //发送失败
+            [dicInfo setObject:[NSNumber numberWithInteger:UASocialResaultFail] forKey:UA_RESULT_RESULT];
+            [dicInfo setObject:[NSNumber numberWithBool:UASocialChannelQQ] forKey:UA_RESULT_TYPE];
+            [self notificationShareResultWithInfo:dicInfo];
             break;
         }
         default:
@@ -104,10 +136,15 @@
     }
 }
 
-#pragma mark weibo delegate
-
 #pragma argument mark - WeiboSDKDelegate
+
+- (void)didReceiveWeiboRequest:(WBBaseRequest *)request
+{
+}
+
 - (void)didReceiveWeiboResponse:(WBBaseResponse *)response{
+    NSMutableDictionary *dicInfo = [self commongResultInfo];
+
     if ([response isKindOfClass:WBSendMessageToWeiboResponse.class])
     {
         WBSendMessageToWeiboResponse* sendMessageToWeiboResponse = (WBSendMessageToWeiboResponse*)response;
@@ -120,16 +157,33 @@
         if (userID) {
             self.wbCurrentUserID = userID;
         }
-        
         //处理回调结果  //ZNLog(@"WBBase 微博sdk发送消息");
+        
+        switch (response.statusCode) {
+            case WeiboSDKResponseStatusCodeSuccess:
+                [dicInfo setObject:[NSNumber numberWithInteger:UASocialResaultSucces] forKey:UA_RESULT_RESULT];
+                [dicInfo setObject:[NSNumber numberWithBool:UASocialChannelWeiBo] forKey:UA_RESULT_TYPE];
+                [self notificationShareResultWithInfo:dicInfo];
+                break;
+            case WeiboSDKResponseStatusCodeUserCancel:
+                [dicInfo setObject:[NSNumber numberWithInteger:UASocialResaultCancel] forKey:UA_RESULT_RESULT];
+                [dicInfo setObject:[NSNumber numberWithBool:UASocialChannelWeiBo] forKey:UA_RESULT_TYPE];
+                [self notificationShareResultWithInfo:dicInfo];
+                break;
+            default:
+                [dicInfo setObject:[NSNumber numberWithInteger:UASocialResaultFail] forKey:UA_RESULT_RESULT];
+                [dicInfo setObject:[NSNumber numberWithBool:UASocialChannelWeiBo] forKey:UA_RESULT_TYPE];
+                [self notificationShareResultWithInfo:dicInfo];
+                break;
+        }
     }
     else if ([response isKindOfClass:WBAuthorizeResponse.class])
     {
-        //ZNLog(@"WBAuthorize认证结果 ");
+        //UA_DBLog(@"WBAuthorize认证结果 ");
     }
     else if ([response isKindOfClass:WBPaymentResponse.class])
     {
-        //ZNLog(@"WBPayment支付结果 ");
+        //UA_DBLog(@"WBPayment支付结果 ");
     }
 }
 
@@ -138,11 +192,29 @@
 
 - (void)onResp:(BaseResp *)resp
 {
+    NSMutableDictionary *dicInfo = [self commongResultInfo];
     if ([resp isKindOfClass:[SendMessageToWXResp class]])
     {
         //处理分享结束
-//        [self sendMessageFinished:resp];
+        switch (resp.errCode) {
+            case WXSuccess:
+                [dicInfo setObject:[NSNumber numberWithInteger:UASocialResaultSucces] forKey:UA_RESULT_RESULT];
+                [dicInfo setObject:[NSNumber numberWithBool:UASocialChannelWeiXin] forKey:UA_RESULT_TYPE];
+                [self notificationShareResultWithInfo:dicInfo];
+                break;
+            case WXErrCodeUserCancel:
+                [dicInfo setObject:[NSNumber numberWithInteger:UASocialResaultCancel] forKey:UA_RESULT_RESULT];
+                [dicInfo setObject:[NSNumber numberWithBool:UASocialChannelWeiXin] forKey:UA_RESULT_TYPE];
+                [self notificationShareResultWithInfo:dicInfo];
+                break;
+            default:
+                [dicInfo setObject:[NSNumber numberWithInteger:UASocialResaultFail] forKey:UA_RESULT_RESULT];
+                [dicInfo setObject:[NSNumber numberWithBool:UASocialChannelWeiXin] forKey:UA_RESULT_TYPE];
+                [self notificationShareResultWithInfo:dicInfo];
+                break;
+        }
     }
+    /*
     // 支付结果
     else if ([resp isKindOfClass:[PayResp class]])
     {
@@ -156,7 +228,7 @@
             //处理微信一键登录
         }
     }
-    
+     */
 }
 
 @end
